@@ -1,0 +1,667 @@
+/* ============================================
+   style.css
+   순서: 베이스 → 레이아웃 → 컴포넌트 → 섹션 → 유틸 → 미디어쿼리
+   ============================================ */
+
+/* ============ 1. 베이스 ============ */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--header-h);
+}
+
+body {
+  /* 내용이 짧은 하위 페이지에서도 푸터가 화면 아래에 붙도록 */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+main {
+  flex: 1 0 auto;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ============ 2. 레이아웃 ============ */
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+}
+
+.section {
+  padding-block: var(--space-7);
+}
+
+.section--surface {
+  background-color: var(--color-surface);
+}
+
+/* 하위 페이지: 섹션 하나뿐이라 위아래 여백을 넉넉히 준다 */
+.section--page {
+  padding-block: var(--space-8);
+}
+
+.section__title {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: var(--space-5);
+}
+
+.section__title::after {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 3px;
+  margin-top: var(--space-2);
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+/* ============ 3. 컴포넌트 ============ */
+
+/* --- 건너뛰기 링크 --- */
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: -60px;
+  z-index: 200;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-sm);
+  transition: top var(--transition);
+}
+
+.skip-link:focus {
+  top: var(--space-3);
+}
+
+/* --- 버튼 --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color var(--transition), border-color var(--transition),
+    color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.btn--primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--primary:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn--outline {
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.btn--outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.btn--sm {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  font-size: var(--fs-sm);
+}
+
+/* --- 아이콘 버튼 --- */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.icon-btn:hover {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+/* 테마에 따라 해/달 아이콘 하나만 보인다 */
+.icon--moon { display: none; }
+[data-theme="dark"] .icon--sun { display: none; }
+[data-theme="dark"] .icon--moon { display: block; }
+
+/* --- 태그 --- */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tag {
+  padding: var(--space-1) var(--space-3);
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/* --- 배지 --- */
+.badge {
+  padding: var(--space-1) var(--space-3);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- 헤더 --- */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--color-bg);
+  transition: background-color var(--transition), box-shadow var(--transition);
+}
+
+.header.scrolled {
+  background-color: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--header-h);
+}
+
+/* 로고가 없으므로 메뉴는 왼쪽, 버튼은 오른쪽 끝에 고정한다.
+   (모바일에서 .nav는 position:fixed라 흐름에서 빠지므로 margin-left로 밀어야 한다) */
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+/* --- 네비게이션 (모바일: 오버레이) --- */
+.nav {
+  position: fixed;
+  inset: var(--header-h) 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity var(--transition), transform var(--transition),
+    visibility var(--transition);
+}
+
+.nav.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.nav__list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.nav__link {
+  position: relative;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  transition: color var(--transition);
+}
+
+.nav__link:hover,
+.nav__link.active {
+  color: var(--color-primary);
+}
+
+/* --- 햄버거 버튼 --- */
+.nav-toggle__bar {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background-color: currentColor;
+  border-radius: var(--radius-full);
+  transition: transform var(--transition), opacity var(--transition);
+}
+
+.nav-toggle__bar + .nav-toggle__bar {
+  margin-top: 5px;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle__bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle__bar:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle__bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ============ 4. 섹션 ============ */
+
+/* --- Hero --- */
+.hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: calc(100vh - var(--header-h));
+  padding-block: var(--space-7) var(--space-8);
+}
+
+.hero__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  text-align: center;
+}
+
+.hero__photo {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  /* 가로형 사진이라 가운데를 정사각형으로 잘라 쓴다.
+     인물이 중앙에 없으면 object-position을 조정할 것 (예: center 35%) */
+  object-position: center;
+  /* 배경색 링 + 오렌지 테두리로 노랑 배경에서 사진이 또렷하게 분리되게 한다 */
+  border: 5px solid var(--color-bg);
+  box-shadow: 0 0 0 3px var(--color-primary), var(--shadow-lg);
+}
+
+.hero__body {
+  max-width: 34rem;
+}
+
+/* 인사말: 작은 pill 배지로 눈에 띄게 */
+.hero__greeting {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  margin-bottom: var(--space-3);
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+}
+
+.hero__title {
+  font-size: var(--fs-hero);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* 이름은 가장 굵고 강조색으로 — 시선이 먼저 닿는 지점 */
+.hero__title strong {
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.hero__tagline {
+  max-width: 42ch;
+  margin: var(--space-4) auto 0;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--color-text);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+/* --- About --- */
+.about__text {
+  max-width: 65ch;
+  color: var(--color-text-muted);
+}
+
+.about__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+/* --- Skills --- */
+.skills {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.skills__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.skills__row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.skills__category {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.skills__items {
+  margin: 0;
+}
+
+/* --- Projects --- */
+.projects {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.project-card__thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background-color: var(--color-border);
+}
+
+.project-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.project-card__period {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.project-card__title {
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.project-card__desc {
+  flex: 1;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.project-card__links {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* --- Contact --- */
+.contact {
+  text-align: center;
+}
+
+.contact .section__title::after {
+  margin-inline: auto;
+}
+
+.contact__text {
+  margin-bottom: var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.socials {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.socials__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  transition: color var(--transition);
+}
+
+.socials__link:hover {
+  color: var(--color-primary);
+}
+
+/* --- Footer --- */
+.footer {
+  padding-block: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.footer__text {
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* ============ 5. 유틸 ============ */
+
+/* 스크롤 등장 애니메이션 (JS가 .visible 부여) */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* JS가 없으면 계속 숨어 있으므로 대비 */
+.no-js .reveal {
+  opacity: 1;
+  transform: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+body.menu-open {
+  overflow: hidden;
+}
+
+/* ============ 6. 미디어 쿼리 ============ */
+
+/* --- 600px 이상: Hero 가로 배치 (사진 왼쪽 / 텍스트 오른쪽) ---
+   메뉴 분기점(768px)보다 먼저 적용해 좁은 창에서도 옆으로 붙게 한다 */
+@media (min-width: 600px) {
+  .hero__inner {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-6);
+    text-align: left;
+  }
+
+  .hero__photo {
+    flex-shrink: 0;
+    width: 240px;
+    height: 240px;
+  }
+
+  .hero__tagline {
+    margin-inline: 0;
+  }
+
+  .hero__actions {
+    justify-content: flex-start;
+  }
+}
+
+/* --- 태블릿 이상: 메뉴 노출, 프로젝트 2열 --- */
+@media (min-width: 768px) {
+  .container {
+    padding-inline: var(--space-4);
+  }
+
+  .section {
+    padding-block: var(--space-8);
+  }
+
+  .nav {
+    position: static;
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    background: none;
+  }
+
+  .nav__list {
+    flex-direction: row;
+    gap: var(--space-4);
+  }
+
+  .nav__link {
+    font-size: var(--fs-body);
+  }
+
+  .nav__link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 100%;
+    height: 2px;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-full);
+    transform: scaleX(0);
+    transition: transform var(--transition);
+  }
+
+  .nav__link:hover::after,
+  .nav__link.active::after {
+    transform: scaleX(1);
+  }
+
+  .nav-toggle {
+    display: none;
+  }
+
+  .skills__row {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--space-5);
+  }
+
+  .skills__category {
+    flex: 0 0 120px;
+  }
+
+  .projects {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* --- 데스크톱: Hero 사진 확대, 프로젝트 3열 --- */
+@media (min-width: 1024px) {
+  .hero__inner {
+    gap: var(--space-7);
+  }
+
+  .hero__photo {
+    width: 300px;
+    height: 300px;
+  }
+
+  .projects {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}

@@ -1,0 +1,72 @@
+/* ============================================
+   variables.css — 디자인 토큰 (docs/03-style-guide.md)
+   색상은 라이트 값을 :root에 전부 선언하고,
+   다크에서는 재정의만 한다.
+   ============================================ */
+
+:root {
+  /* --- 색상: 라이트 (옅은 오렌지 배경 / 블랙·오렌지 텍스트) ---
+     괄호 안은 --color-bg(#ffeedd) 위에서의 대비비.
+     본문 기준 4.5:1, 큰 글자 3:1을 넘도록 골랐다. */
+  --color-bg: #ffeedd;          /* 옅은 오렌지 — 페이지 배경 */
+  --color-surface: #ffe3ca;     /* 한 톤 진한 오렌지 — 카드·교차 섹션 */
+  --color-border: #f0cba6;      /* 따뜻한 오렌지탄색 테두리 */
+  --color-text: #201a12;        /* 웜 블랙 (15.2:1) */
+  --color-text-muted: #6b5a3e;  /* 웜 브라운 — 보조 텍스트 (5.9:1) */
+  --color-primary: #a63c06;     /* 딥 오렌지 — 강조·링크 (5.7:1) */
+  --color-primary-hover: #7f2d04;
+  --color-primary-soft: #ffd3ac;/* 진한 살구색 — 태그·배지 배경(배경과 구분되게) */
+  --color-on-primary: #ffffff;  /* 오렌지 버튼 위 글자 (6.4:1) */
+
+  /* --- 타이포 --- */
+  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, "D2Coding", monospace;
+
+  --fs-hero: clamp(2.125rem, 4.6vw, 3.75rem);
+  --fs-h2: clamp(1.5rem, 3vw, 2rem);
+  --fs-h3: 1.25rem;
+  --fs-body: 1rem;
+  --fs-sm: 0.875rem;
+
+  /* --- 간격 (8px 배수) --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --space-7: 64px;
+  --space-8: 96px;
+
+  /* --- 모양 --- */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-full: 999px;
+
+  /* 오렌지 배경에서 검정 그림자는 탁해 보이므로 갈색 계열로 쓴다 */
+  --shadow-sm: 0 1px 3px rgba(94, 68, 20, 0.12);
+  --shadow-md: 0 4px 16px rgba(94, 68, 20, 0.16);
+  --shadow-lg: 0 12px 32px rgba(94, 68, 20, 0.22);
+
+  --transition: 200ms ease;
+  --container: 1120px;
+  --header-h: 64px;
+}
+
+/* 다크 모드는 노랑 대신 웜 다크 배경 + 밝은 오렌지 강조로 맞춘다 */
+[data-theme="dark"] {
+  --color-bg: #1b1710;
+  --color-surface: #241f16;
+  --color-border: #3a3226;
+  --color-text: #f7f1e3;
+  --color-text-muted: #bdb097;
+  --color-primary: #ff9147;     /* 어두운 배경 위 오렌지 (8.0:1) */
+  --color-primary-hover: #ffab73;
+  --color-primary-soft: #46301c;
+  --color-on-primary: #1b1710;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+}

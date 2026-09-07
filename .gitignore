@@ -1,0 +1,25 @@
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Node (backend 작업 대비)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.env
+.env.local
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log

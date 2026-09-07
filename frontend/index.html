@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko" class="no-js" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- TODO(06-content.md): 이름 / 직군으로 교체 -->
+  <title>홍길동 | 프론트엔드 개발자</title>
+  <meta name="description" content="사용자 경험을 고민하는 프론트엔드 개발자 홍길동의 프로필 페이지입니다.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="홍길동 | 프론트엔드 개발자">
+  <meta property="og:description" content="사용자 경험을 고민하는 프론트엔드 개발자 홍길동의 프로필 페이지입니다.">
+  <!-- TODO: assets/images/og-image.png (1200×630) 추가 필요 -->
+  <meta property="og:image" content="assets/images/og-image.png">
+  <meta property="og:type" content="website">
+
+  <link rel="icon" href="assets/icons/favicon.svg">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- 테마 깜빡임(FOUC) 방지: 렌더 전에 저장된 테마를 적용한다 -->
+  <script>
+    (function () {
+      // JS가 동작하면 no-js를 뗀다 (JS 없이 열면 .reveal이 계속 숨는 것을 방지)
+      document.documentElement.classList.remove('no-js');
+      try {
+        // 이 페이지의 기본 모습은 라이트(옅은 오렌지)다.
+        // OS가 다크로 설정돼 있어도 따라가지 않고, 사용자가 토글로 고른 값만 존중한다.
+        var saved = localStorage.getItem('theme');
+        document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
+      } catch (e) { /* localStorage 차단 환경 무시 */ }
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문 바로가기</a>
+
+  <!-- ========== Header (5개 페이지 공통 — 수정 시 모두 반영할 것) ========== -->
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <nav class="nav" id="nav" aria-label="주요 메뉴">
+        <ul class="nav__list">
+          <li><a class="nav__link" href="index.html">Home</a></li>
+          <li><a class="nav__link" href="about.html">About</a></li>
+          <li><a class="nav__link" href="skills.html">Skills</a></li>
+          <li><a class="nav__link" href="projects.html">Projects</a></li>
+          <li><a class="nav__link" href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+
+      <div class="header__actions">
+        <button class="icon-btn" id="theme-toggle" type="button"
+                aria-label="다크 모드 전환" aria-pressed="false">
+          <svg class="icon icon--sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+          </svg>
+          <svg class="icon icon--moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+          </svg>
+        </button>
+
+        <button class="icon-btn nav-toggle" id="nav-toggle" type="button"
+                aria-label="메뉴 열기" aria-expanded="false" aria-controls="nav">
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ========== Hero ========== -->
+    <section class="hero" id="home">
+      <div class="container hero__inner">
+        <img class="hero__photo" src="assets/images/profile.jpg"
+             alt="홍길동 프로필 사진" width="640" height="426">
+
+        <div class="hero__body">
+          <p class="hero__greeting">안녕하세요,</p>
+          <!-- TODO(06-content.md): 이름 + 직군 -->
+          <h1 class="hero__title">프론트엔드 개발자<br><strong>홍길동</strong>입니다</h1>
+          <p class="hero__tagline">사용자 경험을 고민하는 주니어 개발자입니다.</p>
+
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="projects.html">프로젝트 보기</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__text">© <span id="year">2026</span> 홍길동. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/theme.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
