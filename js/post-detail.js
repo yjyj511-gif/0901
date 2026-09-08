@@ -129,9 +129,22 @@ function initPostDetail() {
 
   const $delete = document.getElementById('post-delete');
   if ($delete && isAuthor) {
-    $delete.addEventListener('click', () => {
+    $delete.addEventListener('click', async () => {
       if (!window.confirm('이 글을 삭제할까요? 되돌릴 수 없습니다.')) return;
-      deletePost(post.id);
+
+      $delete.disabled = true;
+      $delete.textContent = '삭제 중…';
+
+      try {
+        const result = await deletePost(post.id);
+        if (!result.ok) throw new Error(result.message);
+      } catch (error) {
+        window.alert('삭제하지 못했습니다. ' + error.message);
+        $delete.disabled = false;
+        $delete.textContent = '삭제';
+        return;
+      }
+
       location.href = 'index.html';
     });
   }

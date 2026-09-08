@@ -197,6 +197,14 @@ main {
   width: 100%;
 }
 
+/* 서버 응답을 기다리는 동안 잠긴 버튼 */
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* --- 아이콘 버튼 --- */
 .icon-btn {
   display: inline-flex;
@@ -440,6 +448,66 @@ a.tag:hover,
   margin-bottom: var(--space-4);
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
+}
+
+/* --- 통신 중 막대 ---
+   헤더 바로 아래에 붙어 흐른다. 자리를 차지하지 않도록 높이만 잡는다. */
+.loading-bar {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 90;
+  height: 3px;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+.loading-bar::before {
+  content: "";
+  display: block;
+  width: 40%;
+  height: 100%;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  transform: translateX(-100%);
+}
+
+body.is-loading .loading-bar::before {
+  animation: loading-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes loading-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* 모션 최소화 설정에서는 흐르지 않고 가만히 있는 막대로 대신한다 */
+@media (prefers-reduced-motion: reduce) {
+  body.is-loading .loading-bar::before {
+    width: 100%;
+    transform: none;
+    opacity: 0.5;
+  }
+}
+
+/* --- 통신 실패 안내 --- */
+.app-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+}
+
+.app-status__text {
+  flex: 1;
+  min-width: 12rem;
+  font-size: var(--fs-sm);
+  color: var(--color-danger);
 }
 
 /* --- 비어 있음 / 없음 안내 --- */

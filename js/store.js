@@ -1,55 +1,242 @@
 /* ============================================
-   store.js — 데이터 계층 (localStorage)
+   store.js — 데이터 계층 (Google Apps Script + 스프레드시트)
 
-   서버가 없으므로 회원/게시글을 브라우저 localStorage에 저장한다.
-   file:// 로 열어도 동작하며, 나중에 backend/ 가 생기면
-   이 파일의 함수 본문만 fetch 호출로 바꾸면 된다.
+   서버와 이야기하는 유일한 파일이다. 다른 파일은 여기 함수만 부른다.
 
-   ⚠️ 학습용 구조다. 비밀번호가 브라우저에 남으므로
-      실제 서비스에 그대로 쓰면 안 된다.
+   ── 읽기는 동기, 쓰기는 비동기 ──────────────
+   페이지가 뜰 때 bootstrap()이 한 번만 서버에 다녀와 필요한 데이터를
+   snapshot에 담는다. 그 뒤 getPosts() 같은 읽기 함수는 네트워크를 타지
+   않고 snapshot을 그대로 돌려주므로 예전처럼 동기로 쓸 수 있다.
+   실제로 서버에 다녀오는 쓰기 함수만 async다.
+
+   ⚠️ 학습용 구조다. API 주소가 프론트엔드 코드에 그대로 들어가므로
+      누구나 이 API를 직접 호출할 수 있다. 실제 비밀번호를 넣지 말 것.
    ============================================ */
 
-const DB_KEYS = {
-  users: 'blog:users',
-  posts: 'blog:posts',
-  session: 'blog:session',
-  seeded: 'blog:seeded',
+/* 배포 주소는 js/config.js에 둔다. 배포할 때마다 이 파일을 고치지 않기 위해서다. */
+const API_URL = typeof BLOG_API_URL === 'string' ? BLOG_API_URL : '';
+
+const TOKEN_KEY = 'blog:token';
+
+/* 서버에서 받아 온 현재 페이지의 데이터 */
+const snapshot = {
+  posts: [],
+  user: null,        // 로그인한 사람 (없으면 null)
+  viewedUser: null,  // 공개 프로필로 보고 있는 사람
+  ready: false,
 };
 
-/* --- 저장소 원시 접근 (차단 환경에서도 앱이 죽지 않게 감싼다) --- */
-function readJSON(key, fallback) {
+/* ============ 토큰 ============ */
+
+function getToken() {
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    return localStorage.getItem(TOKEN_KEY) || '';
   } catch (e) {
-    return fallback;
+    return '';
   }
 }
 
-function writeJSON(key, value) {
+function setToken(token) {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return true;
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch (e) { /* 저장소 차단 환경 무시 */ }
+}
+
+/* ============ 통신 ============ */
+
+class ApiError extends Error {}
+
+/* 읽기는 GET. 쿼리 문자열이라 프리플라이트가 없다. */
+async function apiGet(action, params = {}) {
+  const query = new URLSearchParams({ action, ...params });
+  return request(`${API_URL}?${query}`, { method: 'GET' });
+}
+
+/* 쓰기는 POST.
+   Content-Type을 application/json으로 두면 브라우저가 OPTIONS 프리플라이트를
+   먼저 보내는데, Apps Script는 그걸 처리하지 못해 CORS로 막힌다.
+   text/plain은 "단순 요청"이라 프리플라이트가 없다. 내용은 그대로 JSON이고,
+   서버에서 JSON.parse(e.postData.contents)로 읽는다. */
+async function apiPost(action, body = {}) {
+  return request(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, token: getToken(), ...body }),
+  });
+}
+
+async function request(url, options) {
+  if (!API_URL) {
+    throw new ApiError('API 주소가 아직 설정되지 않았습니다. js/config.js의 BLOG_API_URL에 배포 주소를 넣어 주세요.');
+  }
+
+  let response;
+  try {
+    response = await fetch(url, { ...options, redirect: 'follow' });
   } catch (e) {
-    return false;
+    // 네트워크 단절, CORS 차단, file://로 열었을 때 모두 여기로 온다
+    throw new ApiError('서버에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요.');
+  }
+
+  if (!response.ok) {
+    throw new ApiError(`서버가 응답하지 않습니다. (HTTP ${response.status})`);
+  }
+
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // 배포 설정이 잘못되면 JSON 대신 구글 로그인 HTML이 돌아온다
+    throw new ApiError('서버 응답을 이해할 수 없습니다. 웹 앱 액세스 권한이 "모든 사용자"인지 확인해 주세요.');
   }
 }
 
-/* --- 공통 유틸 --- */
-function uid(prefix) {
-  return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+/* ============ 초기 적재 ============ */
+
+/* 페이지마다 딱 한 번. 실패하면 예외를 던지므로 main.js가 안내를 띄운다. */
+async function bootstrapStore() {
+  const params = { token: getToken() };
+
+  // 공개 프로필 화면이면 그 사람 정보까지 한 번에 받아 온다
+  const userId = new URLSearchParams(location.search).get('user');
+  if (userId) params.userId = userId;
+
+  const result = await apiGet('bootstrap', params);
+  if (!result.ok) throw new ApiError(result.message || '데이터를 불러오지 못했습니다.');
+
+  snapshot.posts = result.posts || [];
+  snapshot.user = result.user || null;
+  snapshot.viewedUser = result.viewedUser || null;
+  snapshot.ready = true;
+
+  // 토큰이 만료됐으면 서버가 user를 주지 않는다. 죽은 토큰은 버린다.
+  if (!snapshot.user) setToken('');
 }
 
-/* 데모용 해시. 되돌릴 수는 없지만 암호학적으로 안전하지는 않다.
-   (crypto.subtle은 file:// 에서 막히는 브라우저가 있어 쓰지 않았다) */
-function hashPassword(password) {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < password.length; i += 1) {
-    h ^= password.charCodeAt(i);
-    h = Math.imul(h, 0x01000193) >>> 0;
-  }
-  return 'h' + h.toString(16) + ':' + password.length;
+/* ============ 읽기 (동기 — snapshot에서 꺼낸다) ============ */
+
+function getCurrentUser() {
+  return snapshot.user;
 }
+
+function getViewedUser() {
+  return snapshot.viewedUser;
+}
+
+function getPosts() {
+  return snapshot.posts.slice();
+}
+
+/* 서버가 이미 최신순으로 정렬해 준다 */
+function getPostsSorted() {
+  return snapshot.posts.slice();
+}
+
+function getPostById(id) {
+  return snapshot.posts.find((p) => p.id === id) || null;
+}
+
+function getPostsByAuthor(authorId) {
+  return snapshot.posts.filter((p) => p.authorId === authorId);
+}
+
+/* 사이드바 태그 목록용 — 많이 쓰인 순서 */
+function getAllTags() {
+  const counts = new Map();
+  snapshot.posts.forEach((p) => {
+    (p.tags || []).forEach((t) => counts.set(t, (counts.get(t) || 0) + 1));
+  });
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([name, count]) => ({ name, count }));
+}
+
+/* ============ 쓰기 (비동기) ============ */
+
+/* 성공하면 { ok: true, ... }, 실패하면 { ok: false, field?, message } */
+async function createUser({ username, email, password, bio }) {
+  const result = await apiPost('signup', { username, email, password, bio });
+  if (result.ok) {
+    setToken(result.token);
+    snapshot.user = result.user;
+  }
+  return result;
+}
+
+async function login(account, password) {
+  const result = await apiPost('login', { account, password });
+  if (result.ok) {
+    setToken(result.token);
+    snapshot.user = result.user;
+  }
+  return result;
+}
+
+async function logout() {
+  const token = getToken();
+  setToken('');
+  snapshot.user = null;
+  // 서버 세션 삭제는 실패해도 로그아웃 자체는 이미 끝났다
+  try {
+    await apiPost('logout', { token });
+  } catch (e) { /* 무시 */ }
+}
+
+async function updateUser(patch) {
+  const result = await apiPost('updateUser', patch);
+  if (result.ok) {
+    snapshot.user = result.user;
+    // 게시글에 복사된 작성자 이름도 서버에서 함께 바뀌었으므로 화면도 맞춰 준다
+    snapshot.posts.forEach((p) => {
+      if (p.authorId === result.user.id) p.authorName = result.user.username;
+    });
+    if (snapshot.viewedUser && snapshot.viewedUser.id === result.user.id) {
+      snapshot.viewedUser = result.user;
+    }
+  }
+  return result;
+}
+
+async function changePassword(current, next) {
+  return apiPost('changePassword', { current, next });
+}
+
+async function createPost({ title, content, tags }) {
+  const result = await apiPost('createPost', { title, content, tags });
+  if (result.ok) snapshot.posts.unshift(result.post);
+  return result;
+}
+
+async function updatePost(id, { title, content, tags }) {
+  const result = await apiPost('updatePost', { id, title, content, tags });
+  if (result.ok) {
+    const index = snapshot.posts.findIndex((p) => p.id === id);
+    if (index !== -1) snapshot.posts[index] = result.post;
+  }
+  return result;
+}
+
+async function deletePost(id) {
+  const result = await apiPost('deletePost', { id });
+  if (result.ok) {
+    snapshot.posts = snapshot.posts.filter((p) => p.id !== id);
+  }
+  return result;
+}
+
+/* 조회수는 화면을 붙잡아 둘 이유가 없다.
+   숫자를 먼저 올려 보여 주고, 서버에는 뒤에서 알린다. */
+function incrementViews(id) {
+  const post = snapshot.posts.find((p) => p.id === id);
+  if (!post) return 0;
+
+  post.views = (post.views || 0) + 1;
+  apiPost('incrementViews', { id }).catch(() => { /* 조회수는 실패해도 넘어간다 */ });
+  return post.views;
+}
+
+/* ============ 표시용 유틸 (서버와 무관) ============ */
 
 function formatDate(iso) {
   const d = new Date(iso);
@@ -61,247 +248,11 @@ function formatDate(iso) {
 
 /* 본문 앞부분을 목록용 요약으로 자른다 */
 function makeExcerpt(content, max = 120) {
-  const flat = content.replace(/\s+/g, ' ').trim();
+  const flat = String(content).replace(/\s+/g, ' ').trim();
   return flat.length > max ? flat.slice(0, max) + '…' : flat;
 }
 
 function readingMinutes(content) {
   // 한국어 기준 분당 약 500자
-  return Math.max(1, Math.round(content.replace(/\s/g, '').length / 500));
-}
-
-/* --- 사용자 --- */
-function getUsers() {
-  return readJSON(DB_KEYS.users, []);
-}
-
-function getUserById(id) {
-  return getUsers().find((u) => u.id === id) || null;
-}
-
-/* 이메일 또는 닉네임으로 찾는다 (로그인 입력이 둘 다 허용이라서) */
-function findUser(emailOrName) {
-  const key = String(emailOrName).trim().toLowerCase();
-  return getUsers().find(
-    (u) => u.email.toLowerCase() === key || u.username.toLowerCase() === key
-  ) || null;
-}
-
-/* 성공하면 { ok: true, user }, 실패하면 { ok: false, field, message } */
-function createUser({ username, email, password, bio }) {
-  const users = getUsers();
-
-  if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
-    return { ok: false, field: 'username', message: '이미 사용 중인 닉네임입니다.' };
-  }
-  if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-    return { ok: false, field: 'email', message: '이미 가입된 이메일입니다.' };
-  }
-
-  const user = {
-    id: uid('u'),
-    username,
-    email,
-    passwordHash: hashPassword(password),
-    bio: bio || '',
-    createdAt: new Date().toISOString(),
-  };
-
-  users.push(user);
-  if (!writeJSON(DB_KEYS.users, users)) {
-    return { ok: false, field: null, message: '브라우저 저장소를 쓸 수 없어 가입에 실패했습니다.' };
-  }
-  return { ok: true, user };
-}
-
-function updateUser(id, patch) {
-  const users = getUsers();
-  const index = users.findIndex((u) => u.id === id);
-  if (index === -1) return { ok: false, message: '사용자를 찾을 수 없습니다.' };
-
-  // 닉네임을 바꾸면 다른 사람과 겹치지 않는지 확인한다
-  if (patch.username) {
-    const taken = users.some(
-      (u) => u.id !== id && u.username.toLowerCase() === patch.username.toLowerCase()
-    );
-    if (taken) return { ok: false, field: 'username', message: '이미 사용 중인 닉네임입니다.' };
-  }
-
-  users[index] = { ...users[index], ...patch };
-  writeJSON(DB_KEYS.users, users);
-
-  // 게시글에 복사해 둔 작성자 이름도 함께 갱신한다
-  if (patch.username) {
-    const posts = getPosts();
-    let changed = false;
-    posts.forEach((p) => {
-      if (p.authorId === id && p.authorName !== patch.username) {
-        p.authorName = patch.username;
-        changed = true;
-      }
-    });
-    if (changed) writeJSON(DB_KEYS.posts, posts);
-  }
-
-  return { ok: true, user: users[index] };
-}
-
-/* --- 세션 --- */
-function login(emailOrName, password) {
-  const user = findUser(emailOrName);
-  if (!user || user.passwordHash !== hashPassword(password)) {
-    return { ok: false, message: '이메일(닉네임) 또는 비밀번호가 올바르지 않습니다.' };
-  }
-  writeJSON(DB_KEYS.session, { userId: user.id, at: new Date().toISOString() });
-  return { ok: true, user };
-}
-
-function logout() {
-  try {
-    localStorage.removeItem(DB_KEYS.session);
-  } catch (e) { /* 저장소 차단 환경 무시 */ }
-}
-
-function getCurrentUser() {
-  const session = readJSON(DB_KEYS.session, null);
-  if (!session || !session.userId) return null;
-  return getUserById(session.userId);
-}
-
-/* --- 게시글 --- */
-function getPosts() {
-  return readJSON(DB_KEYS.posts, []);
-}
-
-/* 최신 글이 위로 */
-function getPostsSorted() {
-  return getPosts().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-function getPostById(id) {
-  return getPosts().find((p) => p.id === id) || null;
-}
-
-function getPostsByAuthor(authorId) {
-  return getPostsSorted().filter((p) => p.authorId === authorId);
-}
-
-/* 사이드바 태그 목록용 — 많이 쓰인 순서 */
-function getAllTags() {
-  const counts = new Map();
-  getPosts().forEach((p) => {
-    p.tags.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1));
-  });
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([name, count]) => ({ name, count }));
-}
-
-function createPost({ title, content, tags, author }) {
-  const posts = getPosts();
-  const now = new Date().toISOString();
-
-  const post = {
-    id: uid('p'),
-    title,
-    content,
-    tags,
-    authorId: author.id,
-    authorName: author.username,
-    createdAt: now,
-    updatedAt: now,
-    views: 0,
-  };
-
-  posts.push(post);
-  if (!writeJSON(DB_KEYS.posts, posts)) {
-    return { ok: false, message: '브라우저 저장소를 쓸 수 없어 저장에 실패했습니다.' };
-  }
-  return { ok: true, post };
-}
-
-function updatePost(id, { title, content, tags }) {
-  const posts = getPosts();
-  const index = posts.findIndex((p) => p.id === id);
-  if (index === -1) return { ok: false, message: '게시글을 찾을 수 없습니다.' };
-
-  posts[index] = {
-    ...posts[index],
-    title,
-    content,
-    tags,
-    updatedAt: new Date().toISOString(),
-  };
-  writeJSON(DB_KEYS.posts, posts);
-  return { ok: true, post: posts[index] };
-}
-
-function deletePost(id) {
-  writeJSON(DB_KEYS.posts, getPosts().filter((p) => p.id !== id));
-}
-
-/* 상세 페이지 진입 시 1회 호출 */
-function incrementViews(id) {
-  const posts = getPosts();
-  const post = posts.find((p) => p.id === id);
-  if (!post) return 0;
-  post.views = (post.views || 0) + 1;
-  writeJSON(DB_KEYS.posts, posts);
-  return post.views;
-}
-
-/* --- 첫 방문 시 예시 데이터 ---
-   목록이 텅 빈 화면부터 보이지 않도록 데모 계정 하나와 글 세 편을 넣는다.
-   demo@blog.dev / demo1234 로 로그인해 볼 수 있다. */
-function seedIfEmpty() {
-  if (readJSON(DB_KEYS.seeded, null)) return;
-
-  const demo = {
-    id: 'u_demo',
-    username: '홍길동',
-    email: 'demo@blog.dev',
-    passwordHash: hashPassword('demo1234'),
-    bio: '웹에서 사람이 겪는 작은 불편을 줄이는 일에 관심이 있는 프론트엔드 개발자입니다. 배운 것을 잊지 않으려고 여기에 적어 둡니다.',
-    createdAt: '2026-03-02T09:00:00.000Z',
-  };
-
-  const samples = [
-    {
-      title: '바닐라 자바스크립트로 다크 모드 만들기',
-      tags: ['JavaScript', 'CSS'],
-      createdAt: '2026-08-21T10:20:00.000Z',
-      content:
-        '다크 모드를 붙일 때 가장 먼저 부딪히는 문제는 화면이 한 번 밝게 깜빡이는 현상입니다.\n\nCSS 커스텀 프로퍼티로 색을 토큰화해 두면 다크 선택자 한 블록에서 값만 다시 선언하면 됩니다. 진짜 문제는 시점입니다. 저장된 값을 DOMContentLoaded 이후에 읽으면 이미 라이트 화면이 한 프레임 그려진 뒤라 눈에 띄게 번쩍입니다.\n\n해결은 단순합니다. head 안, 스타일시트 다음에 아주 짧은 인라인 스크립트를 두고 localStorage에서 읽은 테마를 documentElement에 바로 꽂아 줍니다. 렌더링이 시작되기 전에 값이 정해지므로 깜빡임이 사라집니다.\n\n토글 버튼에는 aria-pressed를 함께 관리해 주세요. 화면에 보이는 아이콘만 바꾸면 스크린 리더 사용자는 현재 상태를 알 수 없습니다.',
-    },
-    {
-      title: '리스트를 그릴 때 innerHTML을 피한 이유',
-      tags: ['JavaScript', '보안'],
-      createdAt: '2026-08-30T02:05:00.000Z',
-      content:
-        '사용자가 쓴 글을 화면에 뿌릴 때 innerHTML은 가장 쉬운 선택지이면서 가장 위험한 선택지입니다.\n\n제목에 스크립트 태그를 넣은 글이 하나만 저장되어도, 그 목록을 여는 모든 사람의 브라우저에서 그 코드가 실행됩니다. 직접 만든 서비스라면 저장해 둔 데이터가 그대로 새어 나갑니다.\n\ncreateElement와 textContent로 만들면 문자열은 언제나 문자열로만 들어갑니다. 코드가 조금 길어지는 대신 이스케이프를 신경 쓸 일이 사라집니다.\n\n항목이 많다면 DocumentFragment에 모아 두었다가 한 번에 붙이세요. 리플로우가 한 번으로 줄어듭니다.',
-    },
-    {
-      title: '반응형 레이아웃, 브레이크포인트를 줄이는 법',
-      tags: ['CSS', '반응형'],
-      createdAt: '2026-09-04T07:40:00.000Z',
-      content:
-        '브레이크포인트를 늘릴수록 유지보수는 빠르게 어려워집니다. 화면 폭마다 다른 규칙을 기억해야 하기 때문입니다.\n\nGrid의 repeat(auto-fill, minmax(300px, 1fr))은 미디어 쿼리 없이 한 줄에 들어갈 카드 수를 스스로 정합니다. 폭이 줄면 카드가 자연스럽게 아래로 내려갑니다.\n\n글자 크기는 clamp()로 최소·최대를 묶어 두면 모바일에서 너무 작고 데스크톱에서 과하게 커지는 문제를 한 줄로 해결할 수 있습니다.\n\n그래도 남는 분기는 대개 두 개면 충분합니다. 메뉴가 접히는 지점 하나, 레이아웃이 가로로 펼쳐지는 지점 하나입니다.',
-    },
-  ];
-
-  const posts = samples.map((s, i) => ({
-    id: 'p_sample' + (i + 1),
-    title: s.title,
-    content: s.content,
-    tags: s.tags,
-    authorId: demo.id,
-    authorName: demo.username,
-    createdAt: s.createdAt,
-    updatedAt: s.createdAt,
-    views: 12 * (i + 1),
-  }));
-
-  writeJSON(DB_KEYS.users, [demo]);
-  writeJSON(DB_KEYS.posts, posts);
-  writeJSON(DB_KEYS.seeded, true);
+  return Math.max(1, Math.round(String(content).replace(/\s/g, '').length / 500));
 }

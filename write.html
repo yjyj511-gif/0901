@@ -31,11 +31,11 @@
         document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
       } catch (e) { /* localStorage 차단 환경 무시 */ }
 
-      // 로그인 여부에 따라 헤더 메뉴가 한 번 잘못 그려지는 것을 막는다
+      // 헤더 메뉴가 한 번 잘못 그려지는 것을 막는다.
+      // 토큰이 있으면 일단 로그인으로 보고, 서버 응답이 오면 initAuthUI가 바로잡는다.
       var authed = false;
       try {
-        var session = JSON.parse(localStorage.getItem('blog:session') || 'null');
-        authed = !!(session && session.userId);
+        authed = !!localStorage.getItem('blog:token');
       } catch (e) { /* 무시 */ }
       document.documentElement.classList.add(authed ? 'is-auth' : 'is-guest');
     })();
@@ -90,7 +90,18 @@
     </div>
   </header>
 
+  <!-- 서버에서 데이터를 받아오는 동안 헤더 아래에 얇은 막대가 흐른다 -->
+  <div class="loading-bar" id="loading-bar" aria-hidden="true"></div>
+
   <main id="main">
+    <!-- 통신 실패 안내 (js/main.js가 채운다) -->
+    <div class="container" id="app-status" hidden>
+      <div class="app-status" role="alert">
+        <p class="app-status__text" id="app-status-text"></p>
+        <button class="btn btn--outline btn--sm" id="app-retry" type="button">다시 시도</button>
+      </div>
+    </div>
+
 
     <section class="section section--page">
       <div class="container container--narrow">
@@ -150,6 +161,7 @@
     </div>
   </footer>
 
+  <script src="js/config.js"></script>
   <script src="js/store.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/nav.js"></script>

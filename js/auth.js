@@ -3,6 +3,9 @@
 
    헤더의 로그인 상태 표시는 모든 페이지에서 동작하고,
    폼 처리는 해당 폼이 있는 페이지에서만 동작한다.
+
+   제출은 서버를 오가므로 비동기다. 응답을 기다리는 동안
+   버튼을 잠가 두 번 눌리는 것을 막는다.
    ============================================ */
 
 /* --- 폼 공통 헬퍼 --- */
@@ -25,12 +28,43 @@ function clearFormErrors($form) {
   }
 }
 
-/* 폼 전체에 걸리는 오류 (예: 비밀번호 불일치) */
+/* 폼 전체에 걸리는 오류 (예: 비밀번호 불일치, 통신 실패) */
 function showFormAlert($form, message) {
   const $alert = $form.querySelector('.alert');
   if (!$alert) return;
   $alert.textContent = message;
   $alert.hidden = false;
+}
+
+/* 서버가 돌려준 실패를 화면에 옮긴다.
+   field가 있으면 해당 칸 아래에, 없으면 폼 전체 안내로. */
+function applyServerError($form, result) {
+  if (result.field && $form.elements[result.field]) {
+    setFieldError($form.elements[result.field], result.message);
+    $form.elements[result.field].focus();
+  } else {
+    showFormAlert($form, result.message || '처리하지 못했습니다.');
+  }
+}
+
+/* 제출 중에는 버튼을 잠근다. fn이 끝나면 원래대로 되돌린다. */
+async function withSubmitLock($form, fn) {
+  const $button = $form.querySelector('[type="submit"]');
+  const label = $button ? $button.textContent : '';
+
+  if ($button) {
+    $button.disabled = true;
+    $button.textContent = '처리 중…';
+  }
+
+  try {
+    return await fn();
+  } finally {
+    if ($button) {
+      $button.disabled = false;
+      $button.textContent = label;
+    }
+  }
 }
 
 /* 로그인 후 돌아갈 주소. 외부 사이트로 튕기지 않도록 같은 폴더의 html만 허용한다. */
@@ -43,7 +77,8 @@ function safeRedirect(fallback) {
 /* --- 헤더: 로그인 상태에 따른 메뉴 ---
    data-auth="in" 은 로그인했을 때만, "out" 은 로그아웃 상태일 때만 보인다.
    실제로 숨기는 일은 CSS(.is-auth / .is-guest)가 한다. 각 페이지 <head>의
-   인라인 스크립트가 렌더 전에 클래스를 붙여 두므로 메뉴가 깜빡이지 않는다. */
+   인라인 스크립트가 토큰만 보고 먼저 칠해 두고, 서버 응답이 온 뒤
+   이 함수가 정확한 상태로 바로잡는다. */
 function initAuthUI() {
   const user = getCurrentUser();
 
@@ -55,16 +90,18 @@ function initAuthUI() {
   });
 
   const $logout = document.getElementById('logout-btn');
-  if ($logout) {
-    $logout.addEventListener('click', () => {
-      logout();
+  if ($logout && !$logout.dataset.bound) {
+    $logout.dataset.bound = 'true';
+    $logout.addEventListener('click', async () => {
+      $logout.disabled = true;
+      await logout();
       location.href = 'index.html';
     });
   }
 }
 
 /* --- 로그인이 필요한 페이지에서 호출 ---
-   비로그인 상태면 로그인 페이지로 보내고 false를 돌려준다. */
+   비로그인 상태면 로그인 페이지로 보내고 null을 돌려준다. */
 function requireLogin() {
   const user = getCurrentUser();
   if (user) return user;
@@ -100,6 +137,7 @@ function initSignupForm() {
     const email = $email.value.trim();
     const password = $password.value;
 
+    // 서버도 같은 검사를 하지만, 왕복을 아끼려고 여기서 먼저 거른다
     let valid = true;
 
     if (username.length < 2 || username.length > 20) {
@@ -129,20 +167,23 @@ function initSignupForm() {
       return;
     }
 
-    const result = createUser({ username, email, password, bio: $bio.value.trim() });
-    if (!result.ok) {
-      if (result.field && $form.elements[result.field]) {
-        setFieldError($form.elements[result.field], result.message);
-        $form.elements[result.field].focus();
-      } else {
-        showFormAlert($form, result.message);
+    withSubmitLock($form, async () => {
+      let result;
+      try {
+        result = await createUser({ username, email, password, bio: $bio.value.trim() });
+      } catch (error) {
+        showFormAlert($form, error.message);
+        return;
       }
-      return;
-    }
 
-    // 가입 직후 바로 로그인 상태로 만든다
-    login(email, password);
-    location.href = 'index.html';
+      if (!result.ok) {
+        applyServerError($form, result);
+        return;
+      }
+
+      // 서버가 가입과 동시에 토큰을 준다 — 따로 로그인할 필요가 없다
+      location.href = 'index.html';
+    });
   });
 }
 
@@ -174,15 +215,24 @@ function initLoginForm() {
       return;
     }
 
-    const result = login($account.value.trim(), $password.value);
-    if (!result.ok) {
-      showFormAlert($form, result.message);
-      $password.value = '';
-      $password.focus();
-      return;
-    }
+    withSubmitLock($form, async () => {
+      let result;
+      try {
+        result = await login($account.value.trim(), $password.value);
+      } catch (error) {
+        showFormAlert($form, error.message);
+        return;
+      }
 
-    location.href = safeRedirect('index.html');
+      if (!result.ok) {
+        showFormAlert($form, result.message);
+        $password.value = '';
+        $password.focus();
+        return;
+      }
+
+      location.href = safeRedirect('index.html');
+    });
   });
 
   // 데모 계정 채우기 버튼

@@ -3,6 +3,9 @@
 
    ?user=<id> 가 있으면 그 사람의 공개 프로필,
    없으면 내 프로필(수정 가능)을 보여 준다.
+
+   비밀번호 확인은 서버가 한다. 예전에는 해시를 브라우저에서 비교했는데,
+   이제 해시가 클라이언트로 내려오지 않으므로 changePassword로 넘긴다.
    ============================================ */
 
 /* 내가 쓴 글 목록 (수정/삭제 버튼 포함) */
@@ -38,9 +41,22 @@ function createMyPostRow(post, editable) {
     $del.type = 'button';
     $del.className = 'btn btn--danger btn--sm';
     $del.textContent = '삭제';
-    $del.addEventListener('click', () => {
+    $del.addEventListener('click', async () => {
       if (!window.confirm(`"${post.title}" 글을 삭제할까요?`)) return;
-      deletePost(post.id);
+
+      $del.disabled = true;
+      $del.textContent = '삭제 중…';
+
+      try {
+        const result = await deletePost(post.id);
+        if (!result.ok) throw new Error(result.message);
+      } catch (error) {
+        window.alert('삭제하지 못했습니다. ' + error.message);
+        $del.disabled = false;
+        $del.textContent = '삭제';
+        return;
+      }
+
       renderProfilePage();
     });
 
@@ -51,13 +67,13 @@ function createMyPostRow(post, editable) {
   return $li;
 }
 
-/* 프로필 본문 전체를 다시 그린다 (삭제 후에도 재사용) */
+/* 프로필 본문 전체를 다시 그린다 (삭제·저장 후에도 재사용) */
 function renderProfilePage() {
-  const params = new URLSearchParams(location.search);
-  const viewedId = params.get('user');
+  const viewedId = new URLSearchParams(location.search).get('user');
   const me = getCurrentUser();
 
-  const user = viewedId ? getUserById(viewedId) : me;
+  // 공개 프로필은 bootstrap이 함께 받아 왔다
+  const user = viewedId ? getViewedUser() : me;
   const isMe = !!user && !!me && user.id === me.id;
 
   const $notFound = document.getElementById('profile-not-found');
@@ -87,7 +103,7 @@ function renderProfilePage() {
   document.getElementById('stat-posts').textContent = String(posts.length);
   document.getElementById('stat-views').textContent = String(views);
   document.getElementById('stat-tags').textContent = String(
-    new Set(posts.flatMap((p) => p.tags)).size
+    new Set(posts.flatMap((p) => p.tags || [])).size
   );
 
   // 내 프로필일 때만 수정 폼과 글 관리 버튼을 보여 준다
@@ -104,7 +120,7 @@ function renderProfilePage() {
   }
   if ($empty) {
     $empty.hidden = posts.length > 0;
-    $empty.textContent = isMe ? '아직 쓴 글이 없습니다.' : '아직 쓴 글이 없습니다.';
+    $empty.textContent = '아직 쓴 글이 없습니다.';
   }
 
   // 수정 폼 초깃값
@@ -113,6 +129,14 @@ function renderProfilePage() {
     $form.elements.username.value = user.username;
     $form.elements.bio.value = user.bio || '';
   }
+}
+
+/* 저장 완료 안내를 잠깐 띄운다 */
+function flashNotice(id) {
+  const $notice = document.getElementById(id);
+  if (!$notice) return;
+  $notice.hidden = false;
+  setTimeout(() => { $notice.hidden = true; }, 2500);
 }
 
 function initProfilePage() {
@@ -125,14 +149,14 @@ function initProfilePage() {
 
   renderProfilePage();
 
+  /* --- 프로필 수정 --- */
   const $form = document.getElementById('profile-form');
   if ($form) {
     $form.addEventListener('submit', (e) => {
       e.preventDefault();
       clearFormErrors($form);
 
-      const me = getCurrentUser();
-      if (!me) return;
+      if (!getCurrentUser()) return;
 
       const $username = $form.elements.username;
       const username = $username.value.trim();
@@ -143,45 +167,41 @@ function initProfilePage() {
         return;
       }
 
-      const result = updateUser(me.id, { username, bio: $form.elements.bio.value.trim() });
-      if (!result.ok) {
-        if (result.field && $form.elements[result.field]) {
-          setFieldError($form.elements[result.field], result.message);
-        } else {
-          showFormAlert($form, result.message);
+      withSubmitLock($form, async () => {
+        let result;
+        try {
+          result = await updateUser({ username, bio: $form.elements.bio.value.trim() });
+        } catch (error) {
+          showFormAlert($form, error.message);
+          return;
         }
-        return;
-      }
 
-      const $saved = document.getElementById('profile-saved');
-      if ($saved) {
-        $saved.hidden = false;
-        setTimeout(() => { $saved.hidden = true; }, 2500);
-      }
+        if (!result.ok) {
+          applyServerError($form, result);
+          return;
+        }
 
-      renderProfilePage();
-      initAuthUI(); // 헤더의 닉네임도 갱신한다
+        flashNotice('profile-saved');
+        renderProfilePage();
+        initAuthUI();   // 헤더의 닉네임도 갱신한다
+      });
     });
   }
 
+  /* --- 비밀번호 변경 --- */
   const $passwordForm = document.getElementById('password-form');
   if ($passwordForm) {
     $passwordForm.addEventListener('submit', (e) => {
       e.preventDefault();
       clearFormErrors($passwordForm);
 
-      const me = getCurrentUser();
-      if (!me) return;
+      if (!getCurrentUser()) return;
 
       const $current = $passwordForm.elements.current;
       const $next = $passwordForm.elements.next;
       const $confirm = $passwordForm.elements.nextConfirm;
 
-      if (hashPassword($current.value) !== me.passwordHash) {
-        setFieldError($current, '현재 비밀번호가 올바르지 않습니다.');
-        $current.focus();
-        return;
-      }
+      // 현재 비밀번호가 맞는지는 서버만 안다. 여기서는 형식만 본다.
       if ($next.value.length < 8) {
         setFieldError($next, '새 비밀번호는 8자 이상이어야 합니다.');
         $next.focus();
@@ -193,14 +213,23 @@ function initProfilePage() {
         return;
       }
 
-      updateUser(me.id, { passwordHash: hashPassword($next.value) });
-      $passwordForm.reset();
+      withSubmitLock($passwordForm, async () => {
+        let result;
+        try {
+          result = await changePassword($current.value, $next.value);
+        } catch (error) {
+          showFormAlert($passwordForm, error.message);
+          return;
+        }
 
-      const $done = document.getElementById('password-saved');
-      if ($done) {
-        $done.hidden = false;
-        setTimeout(() => { $done.hidden = true; }, 2500);
-      }
+        if (!result.ok) {
+          applyServerError($passwordForm, result);
+          return;
+        }
+
+        $passwordForm.reset();
+        flashNotice('password-saved');
+      });
     });
   }
 }

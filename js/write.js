@@ -134,16 +134,26 @@ function initWriteForm() {
     }
 
     const payload = { title, content, tags: parseTags($tags.value) };
-    const result = editing
-      ? updatePost(editing.id, payload)
-      : createPost({ ...payload, author: user });
 
-    if (!result.ok) {
-      showFormAlert($form, result.message);
-      return;
-    }
+    withSubmitLock($form, async () => {
+      let result;
+      try {
+        result = editing
+          ? await updatePost(editing.id, payload)
+          : await createPost(payload);
+      } catch (error) {
+        // 여기서 실패하면 사용자가 쓴 글이 사라지므로 폼을 그대로 둔다
+        showFormAlert($form, error.message + ' 작성한 내용은 그대로 있으니 다시 시도해 주세요.');
+        return;
+      }
 
-    saved = true;
-    location.href = 'post.html?id=' + encodeURIComponent(result.post.id);
+      if (!result.ok) {
+        applyServerError($form, result);
+        return;
+      }
+
+      saved = true;   // 이탈 경고를 끄고 이동한다
+      location.href = 'post.html?id=' + encodeURIComponent(result.post.id);
+    });
   });
 }

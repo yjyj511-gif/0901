@@ -16,7 +16,8 @@
 │   ├── variables.css          색상·간격·타이포 토큰 (03 문서 기준)
 │   └── style.css              레이아웃 + 컴포넌트 + 폼 + 페이지
 ├── js/
-│   ├── store.js               데이터 계층 (localStorage 읽기·쓰기)
+│   ├── config.js              배포 주소 한 줄 (환경마다 다른 값)
+│   ├── store.js               데이터 계층 (Apps Script API 호출)
 │   ├── theme.js               다크 모드 토글
 │   ├── nav.js                 현재 페이지 표시, 햄버거 메뉴, 헤더 상태, 등장 애니메이션
 │   ├── auth.js                회원가입/로그인/로그아웃, 헤더 로그인 상태, 폼 공통 헬퍼
@@ -33,7 +34,9 @@
 │   │   └── projects/          프로젝트 썸네일 (16:9, 800×450)
 │   └── icons/favicon.svg
 ├── docs/                      ← 이 문서들
-└── backend/                   ← 아직 비어 있음 (2절 참고)
+└── backend/
+    ├── Code.gs                Apps Script 백엔드 (2절 참고)
+    └── README.md              설치·배포 절차
 ```
 
 > CSS를 3개로 나누는 이유: 토큰(variables)만 따로 두면 다크 모드·색상 변경이 한 파일 수정으로 끝난다.
@@ -41,7 +44,8 @@
 
 ### 페이지별 스크립트
 
-모든 페이지가 `store.js → theme.js → nav.js → auth.js` 를 먼저 불러오고, 마지막이 `main.js` 다.
+모든 페이지가 `config.js → store.js → theme.js → nav.js → auth.js` 를 먼저 불러오고,
+마지막이 `main.js` 다.
 그 사이에 해당 페이지 전용 스크립트를 하나 넣는다.
 
 | 페이지 | 추가 스크립트 |
@@ -58,19 +62,35 @@
 
 ## 2. 데이터 저장 방식
 
-서버가 없으므로 **localStorage**를 저장소로 쓴다. `js/store.js` 가 유일한 접근 지점이다.
+**구글 스프레드시트**가 DB이고, **Apps Script 웹앱**이 그 앞의 JSON API다.
+`js/store.js` 가 서버와 이야기하는 유일한 파일이다. 설치 절차는 [backend/README.md](../backend/README.md).
+
+```
+js/store.js  ──fetch──▶  backend/Code.gs  ──▶  users / posts / sessions 시트
+```
+
+### 읽기는 동기, 쓰기는 비동기
+
+페이지가 뜰 때 `bootstrapStore()`가 `bootstrap` 액션을 **한 번만** 호출해
+글 목록과 내 정보를 `snapshot`에 담는다. 그 뒤 `getPosts()` 같은 읽기 함수는
+네트워크를 타지 않고 snapshot에서 꺼내므로 동기다.
+실제로 서버를 오가는 쓰기 함수(`createPost`, `login`, `updateUser` …)만 `async`다.
+
+이렇게 나눈 이유는 호출 지점 25곳을 전부 `await`로 바꾸지 않기 위해서다.
+쓰기는 제출 핸들러 안에만 있어 비동기로 바꾸기 쉽다.
+
+### 브라우저에 남는 것
 
 | 키 | 내용 |
 |---|---|
-| `blog:users` | 사용자 배열 |
-| `blog:posts` | 게시글 배열 |
-| `blog:session` | `{ userId, at }` — 로그인 상태 |
-| `blog:seeded` | 예시 데이터를 한 번만 넣기 위한 표시 |
+| `blog:token` | 로그인 토큰. 서버가 발급하고 요청마다 함께 보낸다 |
 | `theme` | `light` / `dark` |
 
-> ⚠️ **학습용 구조다.** 비밀번호 해시가 브라우저에 그대로 남고, 브라우저를 바꾸면 데이터도 사라진다.
-> 실제 서비스로 만들 때는 `backend/`에 서버를 두고 `store.js`의 함수 본문만
-> `fetch` 호출로 바꾼다. 다른 파일은 `store.js`의 함수 이름에만 의존하므로 수정할 필요가 없다.
+> ⚠️ **`file://` 로 열면 동작하지 않는다.** 출처가 `null`이라 브라우저가 CORS로 막는다.
+> 로컬에서도 `python -m http.server` 로 띄워야 한다.
+
+> ⚠️ **학습용 구조다.** API 주소가 코드에 들어 있어 누구나 직접 호출할 수 있다.
+> 실제로 쓰는 비밀번호를 넣지 말 것.
 
 ### 사용자
 
@@ -90,7 +110,7 @@
 | `id` | ✅ | `uid('u')` 로 생성 |
 | `username` | ✅ | 2~20자. 글 작성자 이름으로 표시되며 중복 불가 |
 | `email` | ✅ | 로그인 아이디. 중복 불가 |
-| `passwordHash` | ✅ | 원문은 저장하지 않는다 |
+| `passwordHash` | ✅ | 솔트 + SHA-256. 원문은 저장하지 않고, 클라이언트로도 내려가지 않는다 |
 | `bio` | ❌ | 프로필 소개 |
 | `createdAt` | ✅ | ISO 문자열 |
 
@@ -115,7 +135,7 @@
 | `id` | ✅ | `uid('p')` 로 생성 |
 | `title` | ✅ | 1~80자 |
 | `content` | ✅ | 10자 이상. **빈 줄이 문단 구분** |
-| `tags` | ✅ | 최대 5개. 입력은 쉼표 구분, 중복·`#`는 제거 |
+| `tags` | ✅ | 최대 5개. 입력은 쉼표 구분, 중복·`#`는 제거. **시트에는 쉼표로 이어 붙여 한 칸에 넣는다** |
 | `authorId` | ✅ | 작성자 `id` |
 | `authorName` | ✅ | 표시용 사본. 닉네임을 바꾸면 `updateUser`가 함께 갱신한다 |
 | `createdAt` / `updatedAt` | ✅ | 두 값이 다르면 상세에서 "수정됨"을 표시 |
@@ -187,6 +207,7 @@
 
   <footer class="footer"> … </footer>
 
+  <script src="js/config.js"></script>
   <script src="js/store.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/nav.js"></script>
@@ -238,7 +259,9 @@
 
 - `var` 금지 — `const` 우선, 재할당 시 `let`
 - 각 파일은 `initXxx()` 를 정의하고, `main.js`에서 `DOMContentLoaded` 시 호출
-- **저장소 접근은 `store.js`를 통해서만 한다.** 다른 파일에서 `localStorage`를 직접 부르지 않는다
+- **서버 접근은 `store.js`를 통해서만 한다.** 다른 파일에서 `fetch`를 직접 부르지 않는다
+- 쓰기 함수는 예외를 던질 수 있다. 제출 핸들러는 `try`로 감싸고 `showFormAlert`으로 안내한다
+- 제출 중에는 `withSubmitLock($form, fn)` 으로 버튼을 잠가 두 번 눌리지 않게 한다
 - **사용자 입력을 화면에 넣을 때 `innerHTML` 금지.** `createElement` + `textContent` 만 사용한다
   (제목에 `<script>`를 넣은 글 하나가 모든 방문자의 브라우저에서 실행될 수 있다)
 - 목록처럼 여러 요소를 붙일 때는 `DocumentFragment`로 모아 한 번에 넣는다
@@ -248,19 +271,33 @@
 - 목록·페이지 버튼 등 동적으로 만든 요소의 클릭은 `document`에 이벤트 위임
 
 ```js
-// main.js
+// main.js — 데이터가 서버에 있으므로 순서가 중요하다
 document.addEventListener('DOMContentLoaded', () => {
-  seedIfEmpty();
+  // 통신이 실패해도 이건 동작해야 한다
   initTheme();
   initNav();
+  initFooterYear();
+
+  startApp();
+});
+
+async function startApp() {
+  setLoading(true);
+  try {
+    await bootstrapStore();       // 서버에 한 번만 다녀온다
+  } catch (error) {
+    setLoading(false);
+    showAppStatus(error.message); // 화면 위쪽에 안내 + 다시 시도 버튼
+    return;
+  }
+  setLoading(false);
   initAuthUI();
 
   if (typeof initPostList === 'function') initPostList();
   // … 페이지별 초기화
 
   initScrollReveal();
-  initFooterYear();
-});
+}
 ```
 
 ## 7. 폼 규칙
