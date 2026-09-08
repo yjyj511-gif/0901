@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>글 목록 | Devlog</title>
-  <meta name="description" content="프론트엔드를 공부하며 배운 것을 정리하는 개인 블로그입니다.">
+  <title>글쓰기 | Devlog</title>
+  <meta name="description" content="새 글을 작성하거나 이미 쓴 글을 수정합니다.">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="글 목록 | Devlog">
-  <meta property="og:description" content="프론트엔드를 공부하며 배운 것을 정리하는 개인 블로그입니다.">
+  <meta property="og:title" content="글쓰기 | Devlog">
+  <meta property="og:description" content="새 글을 작성하거나 이미 쓴 글을 수정합니다.">
   <!-- TODO: assets/images/og-image.png (1200x630) 추가 필요 -->
   <meta property="og:image" content="assets/images/og-image.png">
-  <meta property="og:type" content="blog">
+  <meta property="og:type" content="website">
 
   <link rel="icon" href="assets/icons/favicon.svg">
   <link rel="stylesheet" href="css/reset.css">
@@ -92,37 +92,54 @@
 
   <main id="main">
 
-    <section class="section section--page" id="posts">
-      <div class="container">
-        <div class="page-head">
-          <div>
-            <h1 class="page-head__title">글 목록</h1>
-            <p class="page-head__desc">배운 것과 막혔던 것을 기록합니다.</p>
+    <section class="section section--page">
+      <div class="container container--narrow">
+        <h1 class="page-head__title" id="write-heading">새 글 쓰기</h1>
+        <p class="page-head__desc">제목과 본문은 필수입니다. 태그는 쉼표로 구분합니다.</p>
+
+        <form class="form mt-5" id="write-form" novalidate>
+          <p class="alert" role="alert" hidden></p>
+
+          <div class="field">
+            <div class="field__head">
+              <label class="field__label" for="write-title">
+                제목 <span class="required" aria-hidden="true">*</span>
+              </label>
+              <span class="field__count" id="title-count"></span>
+            </div>
+            <input class="field__input" id="write-title" name="title" type="text"
+                   maxlength="80" placeholder="어떤 이야기를 남기시겠어요?"
+                   required aria-invalid="false">
+            <p class="field__error" aria-live="polite"></p>
           </div>
-          <a class="btn btn--primary" href="write.html" data-auth="in">글쓰기</a>
-          <a class="btn btn--primary" href="login.html" data-auth="out">로그인하고 글쓰기</a>
-        </div>
 
-        <div class="toolbar">
-          <div class="search">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <path d="m20 20-3.5-3.5"></path>
-            </svg>
-            <label class="sr-only" for="post-search">글 검색</label>
-            <input class="search__input" id="post-search" type="search"
-                   placeholder="제목, 내용, 태그로 검색" autocomplete="off">
+          <div class="field">
+            <label class="field__label" for="write-tags">태그</label>
+            <input class="field__input" id="write-tags" name="tags" type="text"
+                   placeholder="예: JavaScript, CSS" autocomplete="off">
+            <p class="field__hint">쉼표로 구분하며 최대 5개까지 저장됩니다.</p>
+            <ul class="tags" id="tag-preview"></ul>
+            <p class="field__error" aria-live="polite"></p>
           </div>
-          <p class="toolbar__count" id="post-count" aria-live="polite"></p>
-        </div>
 
-        <!-- 태그 칩 / 카드 / 페이지 버튼은 js/posts.js가 그린다 -->
-        <ul class="chips" id="tag-filter" aria-label="태그 필터"></ul>
+          <div class="field">
+            <div class="field__head">
+              <label class="field__label" for="write-content">
+                본문 <span class="required" aria-hidden="true">*</span>
+              </label>
+              <span class="field__count" id="content-count"></span>
+            </div>
+            <textarea class="field__textarea" id="write-content" name="content"
+                      placeholder="빈 줄로 문단을 나눕니다."
+                      required aria-invalid="false"></textarea>
+            <p class="field__error" aria-live="polite"></p>
+          </div>
 
-        <ul class="post-list" id="post-list"></ul>
-        <p class="empty" id="post-empty" hidden></p>
-
-        <nav class="pagination" id="pagination" aria-label="페이지"></nav>
+          <div class="form__actions">
+            <button class="btn btn--primary" id="write-submit" type="submit">발행하기</button>
+            <a class="btn btn--ghost" id="write-cancel" href="index.html">취소</a>
+          </div>
+        </form>
       </div>
     </section>
   </main>
@@ -137,7 +154,7 @@
   <script src="js/theme.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/posts.js"></script>
+  <script src="js/write.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

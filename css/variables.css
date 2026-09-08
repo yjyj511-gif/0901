@@ -17,13 +17,15 @@
   --color-primary-hover: #7f2d04;
   --color-primary-soft: #ffd3ac;/* 진한 살구색 — 태그·배지 배경(배경과 구분되게) */
   --color-on-primary: #ffffff;  /* 오렌지 버튼 위 글자 (6.4:1) */
+  --color-danger: #b3261e;      /* 삭제·오류 (5.9:1) */
+  --color-danger-soft: #ffdad6; /* 오류 안내 배경 */
 
   /* --- 타이포 --- */
   --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
     "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
   --font-mono: "JetBrains Mono", Consolas, "D2Coding", monospace;
 
-  --fs-hero: clamp(2.125rem, 4.6vw, 3.75rem);
+  --fs-title: clamp(1.75rem, 4vw, 2.5rem); /* 게시글 상세 제목 */
   --fs-h2: clamp(1.5rem, 3vw, 2rem);
   --fs-h3: 1.25rem;
   --fs-body: 1rem;
@@ -65,6 +67,8 @@
   --color-primary-hover: #ffab73;
   --color-primary-soft: #46301c;
   --color-on-primary: #1b1710;
+  --color-danger: #ff8a80;      /* 어두운 배경 위 경고색 (8.3:1) */
+  --color-danger-soft: #3d1f1c;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);

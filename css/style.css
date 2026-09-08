@@ -1,6 +1,6 @@
 /* ============================================
    style.css
-   순서: 베이스 → 레이아웃 → 컴포넌트 → 섹션 → 유틸 → 미디어쿼리
+   순서: 베이스 → 레이아웃 → 컴포넌트 → 폼 → 페이지 → 유틸 → 미디어쿼리
    ============================================ */
 
 /* ============ 1. 베이스 ============ */
@@ -11,7 +11,7 @@ html {
 }
 
 body {
-  /* 내용이 짧은 하위 페이지에서도 푸터가 화면 아래에 붙도록 */
+  /* 내용이 짧은 페이지에서도 푸터가 화면 아래에 붙도록 */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -52,17 +52,22 @@ main {
   padding-inline: var(--space-3);
 }
 
-.section {
-  padding-block: var(--space-7);
+/* 글 상세·폼처럼 한 줄 길이가 중요한 화면은 더 좁게 */
+.container--narrow {
+  max-width: 760px;
 }
 
+.section {
+  padding-block: var(--space-6);
+}
+
+.section--page {
+  padding-block: var(--space-6) var(--space-8);
+}
+
+/* 섹션이 이어질 때 한 톤 진한 배경으로 번갈아 구분한다 */
 .section--surface {
   background-color: var(--color-surface);
-}
-
-/* 하위 페이지: 섹션 하나뿐이라 위아래 여백을 넉넉히 준다 */
-.section--page {
-  padding-block: var(--space-8);
 }
 
 .section__title {
@@ -80,6 +85,28 @@ main {
   margin-top: var(--space-2);
   background-color: var(--color-primary);
   border-radius: var(--radius-full);
+}
+
+/* 페이지 머리말: 제목 + 설명 + (오른쪽) 버튼 */
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.page-head__title {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.page-head__desc {
+  margin-top: var(--space-1);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
 }
 
 /* ============ 3. 컴포넌트 ============ */
@@ -140,10 +167,34 @@ main {
   transform: translateY(-1px);
 }
 
+.btn--ghost {
+  color: var(--color-text-muted);
+}
+
+.btn--ghost:hover {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+/* 삭제처럼 되돌릴 수 없는 동작 */
+.btn--danger {
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.btn--danger:hover {
+  background-color: var(--color-danger);
+  color: var(--color-on-primary);
+}
+
 .btn--sm {
   min-height: 36px;
   padding: 0 var(--space-3);
   font-size: var(--fs-sm);
+}
+
+.btn--block {
+  width: 100%;
 }
 
 /* --- 아이콘 버튼 --- */
@@ -176,6 +227,7 @@ main {
 }
 
 .tag {
+  display: inline-block;
   padding: var(--space-1) var(--space-3);
   background-color: var(--color-primary-soft);
   color: var(--color-primary);
@@ -183,6 +235,47 @@ main {
   font-size: var(--fs-sm);
   font-weight: 500;
   line-height: 1.6;
+}
+
+a.tag:hover,
+.tag--btn:hover {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.tag--btn {
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+/* --- 필터 칩 --- */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  padding: var(--space-1) var(--space-3);
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  transition: background-color var(--transition), border-color var(--transition),
+    color var(--transition);
+}
+
+.chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.chip--active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
 }
 
 /* --- 배지 --- */
@@ -217,13 +310,33 @@ main {
   height: var(--header-h);
 }
 
-/* 로고가 없으므로 메뉴는 왼쪽, 버튼은 오른쪽 끝에 고정한다.
-   (모바일에서 .nav는 position:fixed라 흐름에서 빠지므로 margin-left로 밀어야 한다) */
 .header__actions {
   display: flex;
   align-items: center;
   gap: var(--space-1);
   margin-left: auto;
+}
+
+/* --- 로고 --- */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
 }
 
 /* --- 네비게이션 (모바일: 오버레이) --- */
@@ -267,6 +380,18 @@ main {
   color: var(--color-primary);
 }
 
+/* 로그아웃처럼 링크가 아닌 항목 */
+.nav__button {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  transition: color var(--transition);
+}
+
+.nav__button:hover {
+  color: var(--color-primary);
+}
+
 /* --- 햄버거 버튼 --- */
 .nav-toggle__bar {
   display: block;
@@ -293,18 +418,602 @@ main {
   transform: translateY(-7px) rotate(-45deg);
 }
 
-/* ============ 4. 섹션 ============ */
+/* --- 카드 --- */
+.card {
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
 
-/* --- Hero --- */
-.hero {
-  position: relative;
+.card + .card {
+  margin-top: var(--space-4);
+}
+
+.card__title {
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.card__desc {
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- 비어 있음 / 없음 안내 --- */
+.empty {
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* ============ 4. 폼 ============ */
+
+.form {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field__label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.field__label .required {
+  color: var(--color-danger);
+}
+
+.field__input,
+.field__textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.field__textarea {
+  min-height: 200px;
+  resize: vertical;
+}
+
+.field__textarea--sm {
+  min-height: 120px;
+}
+
+.field__input::placeholder,
+.field__textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.75;
+}
+
+.field__input:focus,
+.field__textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.field__input[aria-invalid="true"],
+.field__textarea[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.field__hint {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* 라벨 줄 오른쪽의 글자 수 표시 */
+.field__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.field__count {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.field__error {
+  min-height: 1.2em;
+  font-size: var(--fs-sm);
+  color: var(--color-danger);
+}
+
+/* 체크박스 한 줄 */
+.field--check {
+  flex-direction: row;
   align-items: center;
-  min-height: calc(100vh - var(--header-h));
+  gap: var(--space-2);
+}
+
+.field--check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+.field--check label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.form__footer {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.form__footer a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.form__footer a:hover {
+  text-decoration: underline;
+}
+
+/* 폼 전체 오류 / 성공 안내 */
+.alert {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  color: var(--color-danger);
+}
+
+.notice {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-primary-soft);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ============ 5. 페이지 ============ */
+
+/* --- 인증 (로그인 / 회원가입) --- */
+.auth {
+  display: flex;
+  justify-content: center;
   padding-block: var(--space-7) var(--space-8);
 }
 
-.hero__inner {
+.auth__card {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth__title {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.auth__desc {
+  margin: var(--space-2) 0 var(--space-5);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.auth__demo {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-bg);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.auth__demo code {
+  font-family: var(--font-mono);
+  color: var(--color-text);
+}
+
+/* --- 목록 도구 줄 --- */
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search .icon {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search__input {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3) var(--space-2) 44px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-body);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.search__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.toolbar__count {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- 게시글 목록 --- */
+.post-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+.post-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: transform var(--transition), box-shadow var(--transition),
+    border-color var(--transition);
+}
+
+.post-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.post-card__link {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--space-2);
+}
+
+.post-card__meta {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.post-card__title {
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  line-height: 1.4;
+  transition: color var(--transition);
+}
+
+.post-card__link:hover .post-card__title {
+  color: var(--color-primary);
+}
+
+.post-card__excerpt {
+  flex: 1;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- 페이지네이션 --- */
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+.pagination__btn {
+  min-width: 40px;
+  height: 40px;
+  padding-inline: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  transition: background-color var(--transition), border-color var(--transition),
+    color var(--transition);
+}
+
+.pagination__btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pagination__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination__btn--active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 700;
+}
+
+/* --- 게시글 상세 --- */
+.post__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  transition: color var(--transition);
+}
+
+.post__back:hover {
+  color: var(--color-primary);
+}
+
+.post__header {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.post__title {
+  font-size: var(--fs-title);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.post__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin-top: var(--space-3);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.post__author {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.post__tags {
+  margin-top: var(--space-4);
+}
+
+.post__body {
+  padding-block: var(--space-5);
+  font-size: 1.0625rem;
+  line-height: 1.9;
+}
+
+.post__body p + p {
+  margin-top: var(--space-4);
+}
+
+.post__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+/* 이전 글 / 다음 글 */
+.post-nav {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.post-nav__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition), transform var(--transition);
+}
+
+.post-nav__link:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.post-nav__link--next {
+  text-align: right;
+}
+
+.post-nav__label {
+  font-size: var(--fs-sm);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.post-nav__title {
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* --- 프로필 --- */
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.profile__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.profile__avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-full);
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.profile__name {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.profile__sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin-top: var(--space-1);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.profile__bio {
+  max-width: 65ch;
+  color: var(--color-text-muted);
+}
+
+.profile__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat__value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* 내가 쓴 글 목록 */
+.my-posts {
+  display: flex;
+  flex-direction: column;
+}
+
+.my-post {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.my-post:last-child {
+  border-bottom: none;
+}
+
+.my-post__main {
+  min-width: 0;
+}
+
+.my-post__title {
+  font-weight: 600;
+  line-height: 1.4;
+  transition: color var(--transition);
+}
+
+.my-post__title:hover {
+  color: var(--color-primary);
+}
+
+.my-post__meta {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.my-post__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* --- 소개 페이지: 머리 부분 --- */
+.intro-section {
+  padding-block: var(--space-7);
+}
+
+.intro {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -312,25 +1021,25 @@ main {
   text-align: center;
 }
 
-.hero__photo {
-  width: 200px;
-  height: 200px;
+.intro__photo {
+  width: 180px;
+  height: 180px;
   border-radius: var(--radius-full);
   object-fit: cover;
   /* 가로형 사진이라 가운데를 정사각형으로 잘라 쓴다.
      인물이 중앙에 없으면 object-position을 조정할 것 (예: center 35%) */
   object-position: center;
-  /* 배경색 링 + 오렌지 테두리로 노랑 배경에서 사진이 또렷하게 분리되게 한다 */
+  /* 배경색 링 + 오렌지 테두리로 사진이 또렷하게 분리되게 한다 */
   border: 5px solid var(--color-bg);
   box-shadow: 0 0 0 3px var(--color-primary), var(--shadow-lg);
 }
 
-.hero__body {
+.intro__body {
   max-width: 34rem;
 }
 
 /* 인사말: 작은 pill 배지로 눈에 띄게 */
-.hero__greeting {
+.intro__greeting {
   display: inline-block;
   padding: var(--space-1) var(--space-3);
   margin-bottom: var(--space-3);
@@ -343,8 +1052,8 @@ main {
   line-height: 1.6;
 }
 
-.hero__title {
-  font-size: var(--fs-hero);
+.intro__title {
+  font-size: var(--fs-title);
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.02em;
@@ -352,41 +1061,48 @@ main {
 }
 
 /* 이름은 가장 굵고 강조색으로 — 시선이 먼저 닿는 지점 */
-.hero__title strong {
+.intro__title strong {
   font-weight: 800;
   color: var(--color-primary);
 }
 
-.hero__tagline {
+.intro__tagline {
   max-width: 42ch;
-  margin: var(--space-4) auto 0;
+  margin: var(--space-3) auto 0;
   font-size: 1.0625rem;
   line-height: 1.75;
-  color: var(--color-text);
 }
 
-.hero__actions {
+.intro__badges {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--space-3);
-  margin-top: var(--space-5);
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }
 
-/* --- About --- */
+/* --- 소개 페이지: About --- */
 .about__text {
   max-width: 65ch;
   color: var(--color-text-muted);
 }
 
-.about__badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+.about__more {
   margin-top: var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
 }
 
-/* --- Skills --- */
+.about__more a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.about__more a:hover {
+  text-decoration: underline;
+}
+
+/* --- 소개 페이지: Skills --- */
 .skills {
   display: flex;
   flex-direction: column;
@@ -415,7 +1131,7 @@ main {
   margin: 0;
 }
 
-/* --- Projects --- */
+/* --- 소개 페이지: Projects --- */
 .projects {
   display: grid;
   grid-template-columns: 1fr;
@@ -426,7 +1142,7 @@ main {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: var(--color-surface);
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   transition: transform var(--transition), box-shadow var(--transition);
@@ -475,7 +1191,7 @@ main {
   margin-top: var(--space-2);
 }
 
-/* --- Contact --- */
+/* --- 소개 페이지: Contact --- */
 .contact {
   text-align: center;
 }
@@ -510,7 +1226,7 @@ main {
   color: var(--color-primary);
 }
 
-/* --- Footer --- */
+/* --- 푸터 --- */
 .footer {
   padding-block: var(--space-5);
   border-top: 1px solid var(--color-border);
@@ -522,7 +1238,7 @@ main {
   color: var(--color-text-muted);
 }
 
-/* ============ 5. 유틸 ============ */
+/* ============ 6. 유틸 ============ */
 
 /* 스크롤 등장 애니메이션 (JS가 .visible 부여) */
 .reveal {
@@ -558,41 +1274,52 @@ body.menu-open {
   overflow: hidden;
 }
 
-/* ============ 6. 미디어 쿼리 ============ */
+/* 블록 사이 여백 (마크업에 인라인 style을 쓰지 않기 위한 최소한의 유틸) */
+.mt-3 { margin-top: var(--space-3); }
+.mt-4 { margin-top: var(--space-4); }
+.mt-5 { margin-top: var(--space-5); }
 
-/* --- 600px 이상: Hero 가로 배치 (사진 왼쪽 / 텍스트 오른쪽) ---
+/* 로그인 상태별 노출 (클래스는 <head> 인라인 스크립트가 먼저 붙인다) */
+.is-guest [data-auth="in"],
+.is-auth [data-auth="out"] {
+  display: none;
+}
+
+/* ============ 7. 미디어 쿼리 ============ */
+
+/* --- 600px 이상: 소개 머리 부분 가로 배치 (사진 왼쪽 / 텍스트 오른쪽) ---
    메뉴 분기점(768px)보다 먼저 적용해 좁은 창에서도 옆으로 붙게 한다 */
 @media (min-width: 600px) {
-  .hero__inner {
+  .intro {
     flex-direction: row;
     align-items: center;
     gap: var(--space-6);
     text-align: left;
   }
 
-  .hero__photo {
+  .intro__photo {
     flex-shrink: 0;
-    width: 240px;
-    height: 240px;
+    width: 220px;
+    height: 220px;
   }
 
-  .hero__tagline {
+  .intro__tagline {
     margin-inline: 0;
   }
 
-  .hero__actions {
+  .intro__badges {
     justify-content: flex-start;
   }
 }
 
-/* --- 태블릿 이상: 메뉴 노출, 프로젝트 2열 --- */
+/* --- 태블릿 이상: 메뉴 노출, 목록 2열 --- */
 @media (min-width: 768px) {
   .container {
     padding-inline: var(--space-4);
   }
 
   .section {
-    padding-block: var(--space-8);
+    padding-block: var(--space-7);
   }
 
   .nav {
@@ -602,14 +1329,21 @@ body.menu-open {
     visibility: visible;
     transform: none;
     background: none;
+    margin-left: auto;
+  }
+
+  .header__actions {
+    margin-left: 0;
   }
 
   .nav__list {
     flex-direction: row;
+    align-items: center;
     gap: var(--space-4);
   }
 
-  .nav__link {
+  .nav__link,
+  .nav__button {
     font-size: var(--fs-body);
   }
 
@@ -635,6 +1369,17 @@ body.menu-open {
     display: none;
   }
 
+  .toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .search {
+    flex: 1;
+    max-width: 360px;
+  }
+
   .skills__row {
     flex-direction: row;
     align-items: baseline;
@@ -645,20 +1390,30 @@ body.menu-open {
     flex: 0 0 120px;
   }
 
+  .post-list,
   .projects {
     grid-template-columns: repeat(2, 1fr);
   }
-}
 
-/* --- 데스크톱: Hero 사진 확대, 프로젝트 3열 --- */
-@media (min-width: 1024px) {
-  .hero__inner {
-    gap: var(--space-7);
+  .post-nav {
+    grid-template-columns: 1fr 1fr;
   }
 
-  .hero__photo {
-    width: 300px;
-    height: 300px;
+  /* 다음 글만 있을 때도 오른쪽 칸에 두어 방향이 헷갈리지 않게 한다 */
+  .post-nav__link--next:only-child {
+    grid-column: 2;
+  }
+}
+
+/* --- 데스크톱: 목록 자동 열 --- */
+@media (min-width: 1024px) {
+  .post-list {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+
+  .intro__photo {
+    width: 260px;
+    height: 260px;
   }
 
   .projects {

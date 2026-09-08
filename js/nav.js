@@ -60,12 +60,15 @@ function initHeaderState() {
 }
 
 /* --- 현재 보고 있는 페이지의 메뉴에 .active ---
-   페이지가 분리되어 있으므로 스크롤 위치가 아니라 파일명으로 판단한다. */
+   페이지가 분리되어 있으므로 스크롤 위치가 아니라 파일명으로 판단한다.
+   post.html처럼 메뉴에 없는 페이지는 data-match로 상위 메뉴를 지정한다.
+   (예: <a href="index.html" data-match="index.html post.html">) */
 function initActiveNav() {
   const current = location.pathname.split('/').pop() || 'index.html';
 
   document.querySelectorAll('.nav__link').forEach(($link) => {
-    if ($link.getAttribute('href') !== current) return;
+    const targets = ($link.dataset.match || $link.getAttribute('href')).split(' ');
+    if (!targets.includes(current)) return;
     $link.classList.add('active');
     $link.setAttribute('aria-current', 'page');
   });

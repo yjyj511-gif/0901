@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>글 목록 | Devlog</title>
-  <meta name="description" content="프론트엔드를 공부하며 배운 것을 정리하는 개인 블로그입니다.">
+  <title>회원가입 | Devlog</title>
+  <meta name="description" content="Devlog 계정을 새로 만듭니다.">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="글 목록 | Devlog">
-  <meta property="og:description" content="프론트엔드를 공부하며 배운 것을 정리하는 개인 블로그입니다.">
+  <meta property="og:title" content="회원가입 | Devlog">
+  <meta property="og:description" content="Devlog 계정을 새로 만듭니다.">
   <!-- TODO: assets/images/og-image.png (1200x630) 추가 필요 -->
   <meta property="og:image" content="assets/images/og-image.png">
-  <meta property="og:type" content="blog">
+  <meta property="og:type" content="website">
 
   <link rel="icon" href="assets/icons/favicon.svg">
   <link rel="stylesheet" href="css/reset.css">
@@ -92,37 +92,70 @@
 
   <main id="main">
 
-    <section class="section section--page" id="posts">
-      <div class="container">
-        <div class="page-head">
-          <div>
-            <h1 class="page-head__title">글 목록</h1>
-            <p class="page-head__desc">배운 것과 막혔던 것을 기록합니다.</p>
+    <section class="auth">
+      <div class="container container--narrow auth__card">
+        <h1 class="auth__title">회원가입</h1>
+        <p class="auth__desc">가입하면 바로 글을 쓸 수 있습니다.</p>
+
+        <form class="form" id="signup-form" novalidate>
+          <p class="alert" role="alert" hidden></p>
+
+          <div class="field">
+            <label class="field__label" for="signup-username">
+              닉네임 <span class="required" aria-hidden="true">*</span>
+            </label>
+            <input class="field__input" id="signup-username" name="username" type="text"
+                   autocomplete="nickname" required aria-invalid="false">
+            <p class="field__hint">2~20자. 글 작성자 이름으로 표시됩니다.</p>
+            <p class="field__error" aria-live="polite"></p>
           </div>
-          <a class="btn btn--primary" href="write.html" data-auth="in">글쓰기</a>
-          <a class="btn btn--primary" href="login.html" data-auth="out">로그인하고 글쓰기</a>
-        </div>
 
-        <div class="toolbar">
-          <div class="search">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <path d="m20 20-3.5-3.5"></path>
-            </svg>
-            <label class="sr-only" for="post-search">글 검색</label>
-            <input class="search__input" id="post-search" type="search"
-                   placeholder="제목, 내용, 태그로 검색" autocomplete="off">
+          <div class="field">
+            <label class="field__label" for="signup-email">
+              이메일 <span class="required" aria-hidden="true">*</span>
+            </label>
+            <input class="field__input" id="signup-email" name="email" type="email"
+                   autocomplete="email" required aria-invalid="false">
+            <p class="field__error" aria-live="polite"></p>
           </div>
-          <p class="toolbar__count" id="post-count" aria-live="polite"></p>
-        </div>
 
-        <!-- 태그 칩 / 카드 / 페이지 버튼은 js/posts.js가 그린다 -->
-        <ul class="chips" id="tag-filter" aria-label="태그 필터"></ul>
+          <div class="field">
+            <label class="field__label" for="signup-password">
+              비밀번호 <span class="required" aria-hidden="true">*</span>
+            </label>
+            <input class="field__input" id="signup-password" name="password" type="password"
+                   autocomplete="new-password" required aria-invalid="false">
+            <p class="field__hint">8자 이상 입력해 주세요.</p>
+            <p class="field__error" aria-live="polite"></p>
+          </div>
 
-        <ul class="post-list" id="post-list"></ul>
-        <p class="empty" id="post-empty" hidden></p>
+          <div class="field">
+            <label class="field__label" for="signup-password-confirm">
+              비밀번호 확인 <span class="required" aria-hidden="true">*</span>
+            </label>
+            <input class="field__input" id="signup-password-confirm" name="passwordConfirm"
+                   type="password" autocomplete="new-password" required aria-invalid="false">
+            <p class="field__error" aria-live="polite"></p>
+          </div>
 
-        <nav class="pagination" id="pagination" aria-label="페이지"></nav>
+          <div class="field">
+            <label class="field__label" for="signup-bio">한 줄 소개</label>
+            <input class="field__input" id="signup-bio" name="bio" type="text"
+                   placeholder="나중에 프로필에서 바꿀 수 있습니다">
+            <p class="field__error" aria-live="polite"></p>
+          </div>
+
+          <div class="field field--check">
+            <input id="signup-agree" name="agree" type="checkbox">
+            <label for="signup-agree">이용약관과 개인정보 처리방침에 동의합니다.</label>
+          </div>
+
+          <button class="btn btn--primary btn--block" type="submit">가입하기</button>
+        </form>
+
+        <p class="form__footer">
+          이미 계정이 있으신가요? <a href="login.html">로그인</a>
+        </p>
       </div>
     </section>
   </main>
@@ -137,7 +170,6 @@
   <script src="js/theme.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/posts.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

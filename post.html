@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>글 목록 | Devlog</title>
-  <meta name="description" content="프론트엔드를 공부하며 배운 것을 정리하는 개인 블로그입니다.">
+  <title>글 | Devlog</title>
+  <meta name="description" content="게시글 상세 페이지입니다.">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="글 목록 | Devlog">
-  <meta property="og:description" content="프론트엔드를 공부하며 배운 것을 정리하는 개인 블로그입니다.">
+  <meta property="og:title" content="글 | Devlog">
+  <meta property="og:description" content="게시글 상세 페이지입니다.">
   <!-- TODO: assets/images/og-image.png (1200x630) 추가 필요 -->
   <meta property="og:image" content="assets/images/og-image.png">
-  <meta property="og:type" content="blog">
+  <meta property="og:type" content="article">
 
   <link rel="icon" href="assets/icons/favicon.svg">
   <link rel="stylesheet" href="css/reset.css">
@@ -92,37 +92,38 @@
 
   <main id="main">
 
-    <section class="section section--page" id="posts">
-      <div class="container">
-        <div class="page-head">
-          <div>
-            <h1 class="page-head__title">글 목록</h1>
-            <p class="page-head__desc">배운 것과 막혔던 것을 기록합니다.</p>
+    <section class="section section--page">
+      <div class="container container--narrow">
+        <a class="post__back" href="index.html">&larr; 글 목록으로</a>
+
+        <!-- 내용은 js/post-detail.js가 ?id= 로 찾아 채운다 -->
+        <article id="post-article" hidden>
+          <header class="post__header">
+            <h1 class="post__title" id="post-title"></h1>
+            <p class="post__meta">
+              <span class="post__author" id="post-author"></span>
+              <span id="post-date"></span>
+              <span id="post-reading"></span>
+              <span id="post-views"></span>
+              <span id="post-updated" hidden></span>
+            </p>
+            <ul class="tags post__tags" id="post-tags" hidden></ul>
+          </header>
+
+          <div class="post__body" id="post-body"></div>
+
+          <div class="post__actions" id="post-owner-actions" hidden>
+            <a class="btn btn--outline btn--sm" id="post-edit" href="#">수정</a>
+            <button class="btn btn--danger btn--sm" id="post-delete" type="button">삭제</button>
           </div>
-          <a class="btn btn--primary" href="write.html" data-auth="in">글쓰기</a>
-          <a class="btn btn--primary" href="login.html" data-auth="out">로그인하고 글쓰기</a>
+        </article>
+
+        <nav class="post-nav" id="post-nav" aria-label="다른 글" hidden></nav>
+
+        <div class="empty" id="post-not-found" hidden>
+          <p>요청한 글을 찾을 수 없습니다.</p>
+          <p><a class="btn btn--outline btn--sm" href="index.html">글 목록으로</a></p>
         </div>
-
-        <div class="toolbar">
-          <div class="search">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <path d="m20 20-3.5-3.5"></path>
-            </svg>
-            <label class="sr-only" for="post-search">글 검색</label>
-            <input class="search__input" id="post-search" type="search"
-                   placeholder="제목, 내용, 태그로 검색" autocomplete="off">
-          </div>
-          <p class="toolbar__count" id="post-count" aria-live="polite"></p>
-        </div>
-
-        <!-- 태그 칩 / 카드 / 페이지 버튼은 js/posts.js가 그린다 -->
-        <ul class="chips" id="tag-filter" aria-label="태그 필터"></ul>
-
-        <ul class="post-list" id="post-list"></ul>
-        <p class="empty" id="post-empty" hidden></p>
-
-        <nav class="pagination" id="pagination" aria-label="페이지"></nav>
       </div>
     </section>
   </main>
@@ -137,7 +138,7 @@
   <script src="js/theme.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/posts.js"></script>
+  <script src="js/post-detail.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

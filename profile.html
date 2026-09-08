@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko" class="no-js" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>프로필 | Devlog</title>
+  <meta name="description" content="프로필과 작성한 글을 관리합니다.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="프로필 | Devlog">
+  <meta property="og:description" content="프로필과 작성한 글을 관리합니다.">
+  <!-- TODO: assets/images/og-image.png (1200x630) 추가 필요 -->
+  <meta property="og:image" content="assets/images/og-image.png">
+  <meta property="og:type" content="profile">
+
+  <link rel="icon" href="assets/icons/favicon.svg">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- 렌더 전에 테마와 로그인 상태를 확정한다 (화면 깜빡임 방지) -->
+  <script>
+    (function () {
+      // JS가 동작하면 no-js를 뗀다 (JS 없이 열면 .reveal이 계속 숨는 것을 방지)
+      document.documentElement.classList.remove('no-js');
+      try {
+        // 이 사이트의 기본 모습은 라이트다.
+        // OS가 다크로 설정돼 있어도 따라가지 않고, 사용자가 토글로 고른 값만 존중한다.
+        var saved = localStorage.getItem('theme');
+        document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
+      } catch (e) { /* localStorage 차단 환경 무시 */ }
+
+      // 로그인 여부에 따라 헤더 메뉴가 한 번 잘못 그려지는 것을 막는다
+      var authed = false;
+      try {
+        var session = JSON.parse(localStorage.getItem('blog:session') || 'null');
+        authed = !!(session && session.userId);
+      } catch (e) { /* 무시 */ }
+      document.documentElement.classList.add(authed ? 'is-auth' : 'is-guest');
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문 바로가기</a>
+
+  <!-- ========== Header (7개 페이지 공통 — 수정 시 모두 반영할 것) ========== -->
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <a class="brand" href="index.html">
+        <span class="brand__mark" aria-hidden="true">D</span>
+        <span>Devlog</span>
+      </a>
+
+      <nav class="nav" id="nav" aria-label="주요 메뉴">
+        <ul class="nav__list">
+          <li>
+            <a class="nav__link" href="index.html" data-match="index.html post.html">글 목록</a>
+          </li>
+          <li><a class="nav__link" href="about.html">소개</a></li>
+          <li data-auth="in"><a class="nav__link" href="write.html">글쓰기</a></li>
+          <li data-auth="in"><a class="nav__link" href="profile.html">프로필</a></li>
+          <li data-auth="out"><a class="nav__link" href="login.html">로그인</a></li>
+          <li data-auth="out"><a class="nav__link" href="signup.html">회원가입</a></li>
+          <li data-auth="in">
+            <button class="nav__button" type="button" id="logout-btn">로그아웃</button>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="header__actions">
+        <button class="icon-btn" id="theme-toggle" type="button"
+                aria-label="다크 모드 전환" aria-pressed="false">
+          <svg class="icon icon--sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+          </svg>
+          <svg class="icon icon--moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+          </svg>
+        </button>
+
+        <button class="icon-btn nav-toggle" id="nav-toggle" type="button"
+                aria-label="메뉴 열기" aria-expanded="false" aria-controls="nav">
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <section class="section section--page">
+      <div class="container container--narrow">
+
+        <div id="profile-body" hidden>
+          <!-- 프로필 카드 -->
+          <div class="profile">
+            <div class="profile__head">
+              <span class="profile__avatar" id="profile-avatar" aria-hidden="true"></span>
+              <div>
+                <h1 class="profile__name" id="profile-name"></h1>
+                <p class="profile__sub">
+                  <span id="profile-email"></span>
+                  <span id="profile-joined"></span>
+                </p>
+              </div>
+            </div>
+
+            <p class="profile__bio" id="profile-bio"></p>
+
+            <dl class="profile__stats">
+              <div class="stat">
+                <dd class="stat__value" id="stat-posts">0</dd>
+                <dt class="stat__label">작성한 글</dt>
+              </div>
+              <div class="stat">
+                <dd class="stat__value" id="stat-views">0</dd>
+                <dt class="stat__label">총 조회</dt>
+              </div>
+              <div class="stat">
+                <dd class="stat__value" id="stat-tags">0</dd>
+                <dt class="stat__label">사용한 태그</dt>
+              </div>
+            </dl>
+          </div>
+
+          <!-- 글 목록 -->
+          <section class="card mt-5">
+            <h2 class="card__title" id="posts-heading">내가 쓴 글</h2>
+            <ul class="my-posts" id="my-posts"></ul>
+            <p class="field__hint" id="my-posts-empty" hidden></p>
+            <p class="mt-4" data-owner-only hidden>
+              <a class="btn btn--primary btn--sm" href="write.html">새 글 쓰기</a>
+            </p>
+          </section>
+
+          <!-- 프로필 수정 (본인만) -->
+          <section class="card" data-owner-only hidden>
+            <h2 class="card__title">프로필 수정</h2>
+            <p class="card__desc">닉네임을 바꾸면 이미 쓴 글의 작성자 이름도 함께 바뀝니다.</p>
+
+            <form class="form" id="profile-form" novalidate>
+              <p class="alert" role="alert" hidden></p>
+
+              <div class="field">
+                <label class="field__label" for="profile-username">닉네임</label>
+                <input class="field__input" id="profile-username" name="username" type="text"
+                       required aria-invalid="false">
+                <p class="field__error" aria-live="polite"></p>
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="profile-bio-input">소개</label>
+                <textarea class="field__textarea field__textarea--sm" id="profile-bio-input"
+                          name="bio"></textarea>
+                <p class="field__error" aria-live="polite"></p>
+              </div>
+
+              <div class="form__actions">
+                <button class="btn btn--primary" type="submit">저장</button>
+                <p class="notice" id="profile-saved" role="status" hidden>저장했습니다.</p>
+              </div>
+            </form>
+          </section>
+
+          <!-- 비밀번호 변경 (본인만) -->
+          <section class="card" data-owner-only hidden>
+            <h2 class="card__title">비밀번호 변경</h2>
+            <p class="card__desc">8자 이상으로 설정해 주세요.</p>
+
+            <form class="form" id="password-form" novalidate>
+              <p class="alert" role="alert" hidden></p>
+
+              <div class="field">
+                <label class="field__label" for="password-current">현재 비밀번호</label>
+                <input class="field__input" id="password-current" name="current" type="password"
+                       autocomplete="current-password" required aria-invalid="false">
+                <p class="field__error" aria-live="polite"></p>
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="password-next">새 비밀번호</label>
+                <input class="field__input" id="password-next" name="next" type="password"
+                       autocomplete="new-password" required aria-invalid="false">
+                <p class="field__error" aria-live="polite"></p>
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="password-next-confirm">새 비밀번호 확인</label>
+                <input class="field__input" id="password-next-confirm" name="nextConfirm"
+                       type="password" autocomplete="new-password" required aria-invalid="false">
+                <p class="field__error" aria-live="polite"></p>
+              </div>
+
+              <div class="form__actions">
+                <button class="btn btn--primary" type="submit">변경</button>
+                <p class="notice" id="password-saved" role="status" hidden>변경했습니다.</p>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        <div class="empty" id="profile-not-found" hidden>
+          <p>해당 사용자를 찾을 수 없습니다.</p>
+          <p><a class="btn btn--outline btn--sm" href="index.html">글 목록으로</a></p>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__text">&copy; <span id="year">2026</span> Devlog. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/store.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/profile.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
